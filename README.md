@@ -31,3 +31,5 @@ for time in $timeList; do
     reconstructPar -time $time >log.$time&
 done
 ```
+
+If you use uncollated fileHandler, just change `ZYfoamListTimes -processors 21` to `foamListTimes -processor`.
