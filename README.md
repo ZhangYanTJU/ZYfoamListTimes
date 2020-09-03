@@ -3,13 +3,15 @@
 [![OpenFOAM version](https://img.shields.io/badge/OpenFOAM-7-brightgreen)](https://github.com/OpenFOAM/OpenFOAM-7)
 
 ## Usage
-get time list from `processors21`, if you use 21 cores:
+**supported for both collated and uncollated fileHandler**
+
+get time list from `processor*`:
 ```
-ZYfoamListTimes -processors 21
+ZYfoamListTimes -processor
 ```
-rm every time directory in `processors21`:
+rm every time directory in `processor*`:
 ```
-ZYfoamListTimes -processors 21 -rm
+ZYfoamListTimes -processor -rm
 ```
 
 ## advanced usage
@@ -18,7 +20,7 @@ ZYfoamListTimes -processors 21 -rm
 
 You can run below commands to accelerate your `reconstructPar` 6 times faster. 
 ```
-timeList=`ZYfoamListTimes -processors 21`
+timeList=`ZYfoamListTimes -processor`
 for time in $timeList; do
     nCores=6
     joblist=($(jobs -p))
@@ -31,5 +33,3 @@ for time in $timeList; do
     reconstructPar -time $time >log.$time&
 done
 ```
-
-If you use uncollated fileHandler, just change `ZYfoamListTimes -processors 21` to `foamListTimes -processor`.
