@@ -2,7 +2,7 @@
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
    \\    /   O peration     | Website:  https://openfoam.org
-    \\  /    A nd           | Copyright (C) 2011-2018 OpenFOAM Foundation
+    \\  /    A nd           | Copyright (C) 2011-2020 OpenFOAM Foundation
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
@@ -49,6 +49,7 @@ using namespace Foam;
 
 int main(int argc, char *argv[])
 {
+    entry::disableFunctionEntries = true;
     writeInfoHeader = false;
 
     argList::addNote("List times using timeSelector");
@@ -59,18 +60,25 @@ int main(int argc, char *argv[])
         "processor",
         "list times from processor0/ directory"
     );
-    argList::addOption
-    (
-        "processors",
-        "nProcs",
-        "list times from processorsNO/ directory"
-    );
     argList::addBoolOption
     (
         "rm",
         "remove selected time directories"
     );
+    argList::addBoolOption
+    (
+        "withFunctionObjects",
+        "execute functionObjects"
+    );
+    argList::addBoolOption
+    (
+        "withFunctionEntries",
+        "execute functionEntries"
+    );
+
     #include "setRootCase.H"
+
+    entry::disableFunctionEntries = !args.optionFound("withFunctionEntries");
 
     label nProcs = 0;
 
@@ -79,11 +87,8 @@ int main(int argc, char *argv[])
 
     if (args.optionFound("processor"))
     {
-        // Determine the processor count directly
-        while (isDir(args.path()/(word("processor") + name(nProcs))))
-        {
-            ++nProcs;
-        }
+        // Determine the processor count
+        const label nProcs = fileHandler().nProcs(args.path());
 
         if (!nProcs)
         {
@@ -108,21 +113,6 @@ int main(int argc, char *argv[])
                 )
             );
         }
-    }
-    else if (args.optionFound("processors"))
-    {
-        args.optionLookup("processors")() >> nProcs;
-
-        databases.set
-        (
-            0,
-            new Time
-            (
-                Time::controlDictName,
-                args.rootPath(),
-                args.caseName()/fileName(word("processors") + name(nProcs))
-            )
-        );
     }
     else
     {
@@ -161,18 +151,6 @@ int main(int argc, char *argv[])
                 {
                     rmDir(procPath/timeDirs[timeI].name());
                 }
-            }
-        }
-        else if (args.optionFound("processors"))
-        {
-            fileName procPath
-            (
-                args.path()/(word("processors") + name(nProcs))
-            );
-
-            forAll(timeDirs, timeI)
-            {
-                rmDir(procPath/timeDirs[timeI].name());
             }
         }
         else
