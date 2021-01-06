@@ -60,6 +60,11 @@ int main(int argc, char *argv[])
         "processor",
         "list times from processor0/ directory"
     );
+    argList::addOption
+    (
+        "except",
+        "list times exclue this time"
+    );
     argList::addBoolOption
     (
         "rm",
@@ -136,15 +141,56 @@ int main(int argc, char *argv[])
         args
     );
 
+
+    List<bool> selectTimes(timeDirs.size(), false);
+    List<bool> exceptTimes(timeDirs.size(), true);
+    if (args.optionFound("except"))
+    {
+        exceptTimes = timeSelector
+        (
+            args.optionLookup("except")()
+        ).selected(timeDirs);
+
+        forAll(timeDirs, timeI)
+        {
+            if (!exceptTimes[timeI]) selectTimes[timeI] = true;
+        }
+
+        timeDirs = subset(selectTimes, timeDirs);
+    }
+
+
     if (args.optionFound("rm"))
     {
         if (args.optionFound("processor"))
         {
+            // for uncollated fileHandler
             for (label proci=0; proci<nProcs; proci++)
             {
                 const fileName procPath
                 (
                     args.path()/(word("processor") + name(proci))
+                );
+
+                forAll(timeDirs, timeI)
+                {
+                    const fileName procTimePath
+                    (
+                        fileHandler().filePath(procPath/timeDirs[timeI].name())
+                    );
+
+                    if (isDir(procTimePath))
+                    {
+                        rmDir(procTimePath);
+                    }
+                }
+            }
+
+            // for collated fileHandler
+            {
+                const fileName procPath
+                (
+                    args.path()/(word("processors") + name(nProcs))
                 );
 
                 forAll(timeDirs, timeI)
@@ -176,6 +222,7 @@ int main(int argc, char *argv[])
     }
     else
     {
+
         forAll(timeDirs, timeI)
         {
             Info<< timeDirs[timeI].name() << endl;
